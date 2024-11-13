@@ -21,6 +21,7 @@ namespace EGM.AracKiralama.API.Middlewares
             };
 
             var startTime = DateTime.UtcNow;
+
             var originalBodyStream = context.Response.Body;
             await using var responseBody = new MemoryStream();
             context.Response.Body = responseBody;

@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Transactions;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -73,6 +74,10 @@ builder.Services.AddDbContext<AracKiralamaDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("AracKiralamaDbConnection"));
 });
+builder.Services.AddDbContext<LogDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("LogDbConnection"));
+});
 
 builder.Services.AddAutoMapper(typeof(AracKiralamaProfile));
 builder.Services.AddScoped<IVehicleService, VehicleService>();
@@ -81,13 +86,14 @@ builder.Services.AddScoped<ILogService, LogService>();
 builder.Services.AddScoped<ILogRepository, LogRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+TransactionManager.ImplicitDistributedTransactions = true;
+
 var app = builder.Build();
 
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseMiddleware<LogMiddleware>();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
