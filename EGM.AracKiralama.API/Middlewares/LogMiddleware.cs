@@ -1,7 +1,7 @@
 ﻿using EGM.AracKiralama.BL.Abstracts;
 using EGM.AracKiralama.Model.Entities;
-using Microsoft.AspNetCore.Http;
 using System.Text;
+using System.Transactions;
 
 namespace EGM.AracKiralama.API.Middlewares
 {
@@ -15,34 +15,45 @@ namespace EGM.AracKiralama.API.Middlewares
 
         public async Task InvokeAsync(HttpContext context, ILogService logService)
         {
+            var transactionOptions = new TransactionOptions
+            {
+                IsolationLevel = IsolationLevel.ReadUncommitted
+            };
+
+            var startTime = DateTime.UtcNow;
             var originalBodyStream = context.Response.Body;
             await using var responseBody = new MemoryStream();
             context.Response.Body = responseBody;
 
             try
             {
-                int userId = Convert.ToInt32(context.User.Claims.FirstOrDefault(x => x.Type == "id")?.Value);
-                string requestBody = await ReadRequestBodyAsync(context.Request);
-
-                await _next.Invoke(context);
-                string responseText = await ReadResponseBodyAsync(responseBody);
-
-                LogTable log = new LogTable()
+                using (var transactionScope = new TransactionScope
+                (TransactionScopeAsyncFlowOption.Enabled))
                 {
-                    StatusId = 1,
-                    UserId = userId,
-                    RequestPath = context.Request.Path,
-                    RequestBody = requestBody,
-                    ResponseBody = responseText,
-                    ApplicationId = 1,
-                    IpAddress = context.Connection.RemoteIpAddress.ToString(),
-                    LastTransactionDate = DateTime.Now,
-                };
-                await logService.AddLogAsync(log);
+                    int userId = Convert.ToInt32(context.User.Claims.FirstOrDefault(x => x.Type == "id")?.Value);
+                    string requestBody = await ReadRequestBodyAsync(context.Request);
+                    await _next.Invoke(context);
+                    responseBody.Position = 0;
+                    string responseText = await new StreamReader(responseBody).ReadToEndAsync();
 
-                await responseBody.CopyToAsync(originalBodyStream);
+                    LogTable log = new LogTable()
+                    {
+                        StatusId = 1,
+                        UserId = userId,
+                        RequestPath = context.Request.Path,
+                        RequestBody = requestBody,
+                        ResponseBody = responseText,
+                        ApplicationId = 1,
+                        IpAddress = context.Connection.RemoteIpAddress.ToString(),
+                        LastTransactionDate = DateTime.Now,
+                    };
+                    await logService.AddLogAsync(log);
+                    transactionScope.Complete();
+                    responseBody.Position = 0;
+                    await responseBody.CopyToAsync(originalBodyStream);
+                }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 throw;
             }
@@ -50,6 +61,7 @@ namespace EGM.AracKiralama.API.Middlewares
             {
                 context.Response.Body = originalBodyStream;
             }
+
         }
 
         private async Task<string> ReadRequestBodyAsync(HttpRequest httpRequest)
@@ -68,7 +80,7 @@ namespace EGM.AracKiralama.API.Middlewares
             responseBody.Position = 0;
             using var reader = new StreamReader(responseBody);
             var body = await reader.ReadToEndAsync();
-            responseBody.Position = 0; //********
+            responseBody.Position = 0;
             return body;
         }
     }

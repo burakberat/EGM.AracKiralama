@@ -1,12 +1,10 @@
 ﻿using EGM.AracKiralama.BL.Abstracts;
-using EGM.AracKiralama.Model.Entities;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+using EGM.AracKiralama.Model.Dtos;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EGM.AracKiralama.API.Controllers
 {
-    [Authorize(Roles = "admin")]
+    //[Authorize(Roles = "admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class VehicleController : ControllerBase
@@ -27,14 +25,20 @@ namespace EGM.AracKiralama.API.Controllers
         [HttpGet("getvehicle/{plate}")]
         public async Task<IActionResult> GetVehiclesByPlateAsync(string plate)
         {
-            var data = await _vehicleService.GetVehicleDetail(plate);
+            var data = await _vehicleService.GetVehicleDetailAsync(plate);
             return Ok(data);
         }
         [HttpGet("getvehiclewithcolor/{color}")]
         public async Task<IActionResult> GetVehiclesByColorAsync(string color)
         {
-            var data = await _vehicleService.GetVehicleDetailWithColor(color);
+            var data = await _vehicleService.GetVehicleDetailWithColorAsync(color);
             return Ok(data);
+        }
+        [HttpPost("add")]
+        public async Task<IActionResult> AddVehicleAsync([FromBody] VehicleAddDto vehicleAddDto)
+        {
+            var result = await _vehicleService.AddVehicleAsync(vehicleAddDto);
+            return Ok(result);
         }
     }
 }

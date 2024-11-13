@@ -1,23 +1,21 @@
-﻿using EGM.AracKiralama.BL.Abstracts;
+﻿using AutoMapper;
+using EGM.AracKiralama.BL.Abstracts;
 using EGM.AracKiralama.DAL.Abstracts;
 using EGM.AracKiralama.Model.Dtos;
 using EGM.AracKiralama.Model.Entities;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Infrastructure.Model.Dtos;
 
 namespace EGM.AracKiralama.BL.Concretes
 {
     public class VehicleService : IVehicleService
     {
         private readonly IAracKiralamaRepository _aracKiralamaRepository;
+        private readonly IMapper _mapper;
 
-        public VehicleService(IAracKiralamaRepository aracKiralamaRepository)
+        public VehicleService(IAracKiralamaRepository aracKiralamaRepository, IMapper mapper)
         {
             _aracKiralamaRepository = aracKiralamaRepository;
+            _mapper = mapper;
         }
 
         public async Task<List<VehicleListDto>> GetActiveVehicles()
@@ -26,16 +24,26 @@ namespace EGM.AracKiralama.BL.Concretes
             return data;
         }
 
-        public async Task<VehicleDetailDto> GetVehicleDetail(string plate)
+        public async Task<VehicleDetailDto> GetVehicleDetailAsync(string plate)
         {
             var data = await _aracKiralamaRepository.GetProjectAsync<Vehicle, VehicleDetailDto>(d => d.Plate == plate);
             return data;
         }
 
-        public async Task<Vehicle> GetVehicleDetailWithColor(string color)
+        public async Task<Vehicle> GetVehicleDetailWithColorAsync(string color)
         {
             var data = await _aracKiralamaRepository.GetAsync<Vehicle>(d => d.Color == color);
             return data;
+        }
+
+        public async Task<ResultDto<VehicleAddDto>> AddVehicleAsync(VehicleAddDto item)
+        {
+            var data = _mapper.Map<Vehicle>(item);
+            await _aracKiralamaRepository.AddAsync(data);
+            await _aracKiralamaRepository.SaveChangesAsync();
+            item.Id = data.Id;
+            return ResultDto<VehicleAddDto>.Success(item);
+            
         }
     }
 }

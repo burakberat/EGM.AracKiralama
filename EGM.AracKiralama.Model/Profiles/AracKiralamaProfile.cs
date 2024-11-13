@@ -22,6 +22,7 @@ namespace EGM.AracKiralama.Model.Profiles
                 .ForMember(dest => dest.ModelName, opt => opt.MapFrom(src => src.Model.Name));
             ;
             CreateMap<User, UserDto>();
+            CreateMap<Vehicle, VehicleAddDto>().ReverseMap();
         }
     }
 }

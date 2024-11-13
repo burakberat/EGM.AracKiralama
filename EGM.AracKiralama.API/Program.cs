@@ -75,8 +75,10 @@ builder.Services.AddDbContext<AracKiralamaDbContext>(options =>
 });
 
 builder.Services.AddAutoMapper(typeof(AracKiralamaProfile));
-builder.Services.AddScoped<IAracKiralamaRepository, AracKiralamaRepository>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
+builder.Services.AddScoped<IAracKiralamaRepository, AracKiralamaRepository>();
+builder.Services.AddScoped<ILogService, LogService>();
+builder.Services.AddScoped<ILogRepository, LogRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
@@ -84,11 +86,13 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseMiddleware<LogMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseMiddleware<FirstMiddleware>();
-app.UseMiddleware<SecondMiddleware>();
+//app.UseMiddleware<FirstMiddleware>();
+//app.UseMiddleware<SecondMiddleware>();
 
 app.MapDefaultControllerRoute();
 

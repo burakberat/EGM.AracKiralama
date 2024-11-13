@@ -1,7 +1,6 @@
 ﻿using EGM.AracKiralama.BL.Abstracts;
 using EGM.AracKiralama.Model.Dtos;
 using Infrastructure.Model.Dtos;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EGM.AracKiralama.API.Controllers
