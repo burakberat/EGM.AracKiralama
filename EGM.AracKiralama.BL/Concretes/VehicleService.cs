@@ -27,7 +27,7 @@ namespace EGM.AracKiralama.BL.Concretes
 
         public async Task<VehicleDetailDto> GetVehicleDetailAsync(string plate)
         {
-            throw new TimeException("Araç sorgulamada 20:00 sonrası işlem yapmaya çalıştın.");
+            //throw new TimeException("Araç sorgulamada 20:00 sonrası işlem yapmaya çalıştın.");
             var data = await _aracKiralamaRepository.GetProjectAsync<Vehicle, VehicleDetailDto>(d => d.Plate == plate);
             return data;
         }

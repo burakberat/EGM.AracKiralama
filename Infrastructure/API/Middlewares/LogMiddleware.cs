@@ -1,8 +1,12 @@
-﻿using Infra.BL.Abstracts;
+﻿
+using Infra.BL.Abstracts;
+using Infra.Model.Dtos;
 using Infra.Model.Entities;
 using Infrastructure.Exceptions;
 using Infrastructure.Model.Dtos;
 using Microsoft.AspNetCore.Http;
+using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Transactions;
 
@@ -15,6 +19,7 @@ namespace Infra.API.Middlewares
         ILogService _logService;
         DateTime startTime;
         Stream originalBodyStream;
+
 
         private readonly RequestDelegate _next;
         public LogMiddleware(RequestDelegate next)
@@ -29,8 +34,9 @@ namespace Infra.API.Middlewares
             {
                 IsolationLevel = IsolationLevel.ReadUncommitted
             };
-
             startTime = DateTime.UtcNow;
+
+
             originalBodyStream = context.Response.Body;
             // Akışı kapatmadan işlemi yapabilmek için yeni bir MemoryStream oluşturun
             var memoryStreamRequestBody = new MemoryStream();
@@ -41,24 +47,29 @@ namespace Infra.API.Middlewares
 
                 using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
+
                     // İstek gövdesini MemoryStream'e kopyalayın
                     await context.Request.Body.CopyToAsync(memoryStreamRequestBody);
+
                     // Başlangıca dönerek tekrar okuma için sıfırlayın
                     memoryStreamRequestBody.Position = 0;
                     context.Request.Body = memoryStreamRequestBody;
+
                     // İsteğin gövdesini bir kere okuyup loglayabilirsiniz
                     requestBody = await new StreamReader(memoryStreamRequestBody).ReadToEndAsync();
                     //Console.WriteLine($"Request Body: {requestBody}");
+
                     // Okuma işlemi için tekrar başa döndürün
                     memoryStreamRequestBody.Position = 0;
-                    await _next.Invoke(context);
 
+                    await _next.Invoke(context);
+                    // StatusCode 401 ise özel bir mesaj döndür
                     if (context.Response.StatusCode >= 300)
                     {
                         throw new UnauthorizedAccessException();
                     }
-                    int userId = Convert.ToInt32(context.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
 
+                    int userId = Convert.ToInt32(context.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
                     memoryStreamResponseBody.Position = 0;
                     responseText = await new StreamReader(memoryStreamResponseBody).ReadToEndAsync();
 
@@ -74,7 +85,6 @@ namespace Infra.API.Middlewares
                         LastTransactionDate = DateTime.Now,
 
                     };
-
                     await logService.AddLogAsync(log);
                     transactionScope.Complete();
                     memoryStreamResponseBody.Position = 0;
@@ -98,23 +108,23 @@ namespace Infra.API.Middlewares
         {
             int userId = Convert.ToInt32(context.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
             string erorMessage = exception.Message;
-            string clientMessage = "";
+            string clientMesaj = "";
 
             switch (exception)
             {
                 case UnauthorizedAccessException:
-                    clientMessage = "Login olmadan işlem yapamazsınız";
+                    clientMesaj = "Login olmadan işlem gerçekleştiremezsiniz.";
                     break;
 
                 case TimeException:
-                    clientMessage = "Saat 20'den sonra işlem gerçekleştirmezsiniz.";
+                    clientMesaj = "Saat 20:00'dan sonra işlem gerçekleştiremezsiniz.";
+                    //bu hataya özel işlem yapacaksam burada yapmalıyım
                     break;
 
                 default:
-                    clientMessage = "Beklenmeyen bir hata oluştu";
+                    clientMesaj = "Beklenmeye bir hata oluştu";
                     break;
             }
-
             ErrorLogTable errorLogTable = new()
             {
                 StatusId = 0,
@@ -132,7 +142,7 @@ namespace Infra.API.Middlewares
 
             await _logService.AddErrorLogAsync(errorLogTable);
             context.Response.Body = originalBodyStream;
-            await context.Response.WriteAsync(JsonSerializer.Serialize(ResultDto<NoContent>.Error($"Hata kodu : {errorLogTable.Id} Mesaj : {clientMessage}", null)));
+            await context.Response.WriteAsync(JsonSerializer.Serialize(ResultDto<NoContent>.Error($"Hata kodu : {errorLogTable.Id} Mesaj : {clientMesaj}", null)));
         }
     }
 }

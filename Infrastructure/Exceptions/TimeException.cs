@@ -12,7 +12,6 @@ namespace Infrastructure.Exceptions
         {
             ErrorCode = 320;
         }
-
         public int ErrorCode { get; }
 
     }

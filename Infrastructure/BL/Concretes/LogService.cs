@@ -19,7 +19,6 @@ namespace Infra.BL.Concretes
         }
         public async Task AddErrorLogAsync(ErrorLogTable log)
         {
-            _logRepository.Clear();
             await _logRepository.AddAsync(log);
             await _logRepository.SaveChangesAsync();
         }

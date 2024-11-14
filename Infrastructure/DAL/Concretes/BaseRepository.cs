@@ -190,20 +190,19 @@ namespace Infra.DAL.Concretes
 
         public async Task<int> SaveChangesAsync()
         {
-            return await _context.SaveChangesAsync(default);
-            //try
-            //{
-            //    return await _context.SaveChangesAsync(default);
-            //}
-            //catch (Exception ex)
-            //{
-            //    Rollback();
-            //    throw ex ?? new Exception("SaveChanges işleminde beklenmeye bir hata ile kaşılaşıldı.");
-            //}
-            //finally
-            //{
-            //    Clear();
-            //}
+            try
+            {
+                return await _context.SaveChangesAsync(default);
+            }
+            catch (Exception ex)
+            {
+                Rollback();
+                throw ex ?? new Exception("SaveChanges işleminde beklenmeye bir hata ile kaşılaşıldı.");
+            }
+            finally
+            {
+                Clear();
+            }
         }
 
         public void Rollback()
@@ -214,8 +213,6 @@ namespace Infra.DAL.Concretes
         {
             (_context as DbContext).ChangeTracker.Clear();
         }
-
-
 
         #endregion
 
