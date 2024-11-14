@@ -1,10 +1,11 @@
-﻿using EGM.AracKiralama.API.Middlewares;
-using EGM.AracKiralama.BL.Abstracts;
+﻿using EGM.AracKiralama.BL.Abstracts;
 using EGM.AracKiralama.BL.Concretes;
 using EGM.AracKiralama.DAL.Abstracts;
 using EGM.AracKiralama.DAL.Concretes;
 using EGM.AracKiralama.DAL.Context;
 using EGM.AracKiralama.Model.Profiles;
+using Infra.API.Middlewares;
+using Infra.Extensions;
 using Infrastructure.Model.Dtos;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -13,26 +14,27 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Transactions;
 
-
 var builder = WebApplication.CreateBuilder(args);
 //API servislerini eklemek için
 
 builder.Services.AddControllers();
+#region Tokenİslemleri
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+.AddJwtBearer(options =>
+{
+    var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateAudience = true,
-            ValidateIssuer = true,
-            ValidAudience = jwtSettings.Audience,
-            ValidIssuer = jwtSettings.Issuer,
-            ValidateLifetime = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
-        };
-    });
+        ValidateAudience = true,
+        ValidateIssuer = true,
+        ValidAudience = jwtSettings.Audience,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidateLifetime = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
+    };
+});
 builder.Services.AddAuthorization();
+#endregion
 
 builder.Services.AddSwaggerGen(swagger =>
 {
@@ -74,16 +76,15 @@ builder.Services.AddDbContext<AracKiralamaDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("AracKiralamaDbConnection"));
 });
-builder.Services.AddDbContext<LogDbContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("LogDbConnection"));
-});
+
+#region LogService
+builder.Services.AddEgmLog(builder.Configuration.GetConnectionString("LogDbConnection"));
+#endregion
 
 builder.Services.AddAutoMapper(typeof(AracKiralamaProfile));
-builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IAracKiralamaRepository, AracKiralamaRepository>();
-builder.Services.AddScoped<ILogService, LogService>();
-builder.Services.AddScoped<ILogRepository, LogRepository>();
+builder.Services.AddScoped<IVehicleService, VehicleService>();
+
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 TransactionManager.ImplicitDistributedTransactions = true;

@@ -3,6 +3,7 @@ using EGM.AracKiralama.BL.Abstracts;
 using EGM.AracKiralama.DAL.Abstracts;
 using EGM.AracKiralama.Model.Dtos;
 using EGM.AracKiralama.Model.Entities;
+using Infrastructure.Exceptions;
 using Infrastructure.Model.Dtos;
 
 namespace EGM.AracKiralama.BL.Concretes
@@ -26,6 +27,7 @@ namespace EGM.AracKiralama.BL.Concretes
 
         public async Task<VehicleDetailDto> GetVehicleDetailAsync(string plate)
         {
+            throw new TimeException("Araç sorgulamada 20:00 sonrası işlem yapmaya çalıştın.");
             var data = await _aracKiralamaRepository.GetProjectAsync<Vehicle, VehicleDetailDto>(d => d.Plate == plate);
             return data;
         }
@@ -43,7 +45,7 @@ namespace EGM.AracKiralama.BL.Concretes
             await _aracKiralamaRepository.SaveChangesAsync();
             item.Id = data.Id;
             return ResultDto<VehicleAddDto>.Success(item);
-            
+
         }
     }
 }

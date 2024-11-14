@@ -1,7 +1,7 @@
-﻿using EGM.AracKiralama.Model.Entities;
+﻿using Infra.Model.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace EGM.AracKiralama.DAL.Context
+namespace Infra.DAL.Context
 {
     public class LogDbContext : DbContext
     {
@@ -9,5 +9,6 @@ namespace EGM.AracKiralama.DAL.Context
         {
         }
         public virtual DbSet<LogTable> LogTable { get; set; }
+        public virtual DbSet<ErrorLogTable> ErrorLogTable { get; set; }
     }
 }

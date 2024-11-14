@@ -1,6 +1,6 @@
 ﻿using Infra.DAL.Abstracts;
 
-namespace EGM.AracKiralama.DAL.Abstracts
+namespace Infra.DAL.Abstracts
 {
     public interface ILogRepository : IBaseRepository
     {

@@ -1,8 +1,8 @@
-﻿using EGM.AracKiralama.BL.Abstracts;
-using EGM.AracKiralama.DAL.Abstracts;
-using EGM.AracKiralama.Model.Entities;
+﻿using Infra.BL.Abstracts;
+using Infra.DAL.Abstracts;
+using Infra.Model.Entities;
 
-namespace EGM.AracKiralama.BL.Concretes
+namespace Infra.BL.Concretes
 {
     public class LogService : ILogService
     {
@@ -14,6 +14,12 @@ namespace EGM.AracKiralama.BL.Concretes
 
         public async Task AddLogAsync(LogTable log)
         {
+            await _logRepository.AddAsync(log);
+            await _logRepository.SaveChangesAsync();
+        }
+        public async Task AddErrorLogAsync(ErrorLogTable log)
+        {
+            _logRepository.Clear();
             await _logRepository.AddAsync(log);
             await _logRepository.SaveChangesAsync();
         }

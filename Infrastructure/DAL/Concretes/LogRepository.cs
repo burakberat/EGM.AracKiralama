@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
-using EGM.AracKiralama.DAL.Abstracts;
-using EGM.AracKiralama.DAL.Context;
+using Infra.DAL.Abstracts;
 using Infra.DAL.Concretes;
+using Infra.DAL.Context;
 
-namespace EGM.AracKiralama.DAL.Concretes
+namespace INfra.DAL.Concretes
 {
     public class LogRepository : BaseRepository, ILogRepository
     {
