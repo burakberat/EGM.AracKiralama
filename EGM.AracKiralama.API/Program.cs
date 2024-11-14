@@ -16,7 +16,6 @@ using System.Transactions;
 
 var builder = WebApplication.CreateBuilder(args);
 //API servislerini eklemek için
-//deneme
 
 builder.Services.AddControllers();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
