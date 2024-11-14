@@ -6,6 +6,7 @@ using EGM.AracKiralama.DAL.Context;
 using EGM.AracKiralama.Model.Profiles;
 using Infra.API.Middlewares;
 using Infra.Extensions;
+using Infrastructure.Cache;
 using Infrastructure.Model.Dtos;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -80,6 +81,8 @@ builder.Services.AddDbContext<AracKiralamaDbContext>(options =>
 #region LogService
 builder.Services.AddEgmLog(builder.Configuration.GetConnectionString("LogDbConnection"));
 #endregion
+
+builder.Services.AddRedisCache(builder.Configuration.GetSection("RedisConfiguration").Get<RedisConfiguration>());
 
 builder.Services.AddAutoMapper(typeof(AracKiralamaProfile));
 builder.Services.AddScoped<IAracKiralamaRepository, AracKiralamaRepository>();

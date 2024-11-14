@@ -3,6 +3,7 @@ using EGM.AracKiralama.BL.Abstracts;
 using EGM.AracKiralama.DAL.Abstracts;
 using EGM.AracKiralama.Model.Dtos;
 using EGM.AracKiralama.Model.Entities;
+using Infrastructure.Cache;
 using Infrastructure.Exceptions;
 using Infrastructure.Model.Dtos;
 
@@ -12,21 +13,32 @@ namespace EGM.AracKiralama.BL.Concretes
     {
         private readonly IAracKiralamaRepository _aracKiralamaRepository;
         private readonly IMapper _mapper;
+        private readonly ICacheService _cacheService;
 
-        public VehicleService(IAracKiralamaRepository aracKiralamaRepository, IMapper mapper)
+        public VehicleService(IAracKiralamaRepository aracKiralamaRepository, IMapper mapper, ICacheService cacheService)
         {
             _aracKiralamaRepository = aracKiralamaRepository;
             _mapper = mapper;
+            _cacheService = cacheService;
         }
 
         public async Task<List<VehicleListDto>> GetActiveVehicles()
         {
+            //Redis
+            var list = await _cacheService.GetObjectAsync<List<VehicleListDto>>("ActiveVehicles");
+            if (list != null)
+            {
+                return list;
+            }
             var data = await _aracKiralamaRepository.ListProjectAsync<Vehicle, VehicleListDto>(d => d.StatusId != 0);
+            await _cacheService.SetObjectAsync("ActiveVehicles", data);
+
             return data;
         }
 
         public async Task<VehicleDetailDto> GetVehicleDetailAsync(string plate)
         {
+            //Custom Exception
             //throw new TimeException("Araç sorgulamada 20:00 sonrası işlem yapmaya çalıştın.");
             var data = await _aracKiralamaRepository.GetProjectAsync<Vehicle, VehicleDetailDto>(d => d.Plate == plate);
             return data;
