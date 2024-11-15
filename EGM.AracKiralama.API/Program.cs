@@ -1,4 +1,5 @@
-﻿using EGM.AracKiralama.BL.Abstracts;
+﻿using Castle.DynamicProxy;
+using EGM.AracKiralama.BL.Abstracts;
 using EGM.AracKiralama.BL.Concretes;
 using EGM.AracKiralama.DAL.Abstracts;
 using EGM.AracKiralama.DAL.Concretes;
@@ -7,6 +8,7 @@ using EGM.AracKiralama.Model.Profiles;
 using Infra.API.Middlewares;
 using Infra.Extensions;
 using Infrastructure.Cache;
+using Infrastructure.Interceptors;
 using Infrastructure.Model.Dtos;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -15,27 +17,34 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Transactions;
 
+
+var proxyGenetor = new ProxyGenerator();
+
+
 var builder = WebApplication.CreateBuilder(args);
 //API servislerini eklemek için
-
 builder.Services.AddControllers();
-#region Tokenİslemleri
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-.AddJwtBearer(options =>
-{
-    var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
-    options.TokenValidationParameters = new TokenValidationParameters
+    .AddJwtBearer(options =>
     {
-        ValidateAudience = true,
-        ValidateIssuer = true,
-        ValidAudience = jwtSettings.Audience,
-        ValidIssuer = jwtSettings.Issuer,
-        ValidateLifetime = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
-    };
-});
+        var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = false,
+            ValidateIssuer = false,
+            ValidAudience = jwtSettings.Audience,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidateLifetime = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
+        };
+
+
+    });
 builder.Services.AddAuthorization();
-#endregion
+
+
 
 builder.Services.AddSwaggerGen(swagger =>
 {
@@ -77,32 +86,37 @@ builder.Services.AddDbContext<AracKiralamaDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("AracKiralamaDbConnection"));
 });
-
-#region LogService
-builder.Services.AddEgmLog(builder.Configuration.GetConnectionString("LogDbConnection"));
+#region LogService ayarları
+builder.Services.AddEGMLog(builder.Configuration.GetConnectionString("LogDbConnection"));
 #endregion
 
-builder.Services.AddRedisCache(builder.Configuration.GetSection("RedisConfiguration").Get<RedisConfiguration>());
+builder.Services.AddTransient<CachingInterceptor>();
+
+//builder.Services.AddInRedisCache(builder.Configuration.GetSection("RedisConfiguration").Get<RedisConfiguration>());
+builder.Services.AddInMemoryCache();
+
 
 builder.Services.AddAutoMapper(typeof(AracKiralamaProfile));
+
+
 builder.Services.AddScoped<IAracKiralamaRepository, AracKiralamaRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 
-builder.Services.AddScoped<IAuthService, AuthService>();
+//builder.Services.AddProxiedServices(proxyGenetor);
 
 TransactionManager.ImplicitDistributedTransactions = true;
 
 var app = builder.Build();
 
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseMiddleware<LogMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
-
-//app.UseMiddleware<FirstMiddleware>();
-//app.UseMiddleware<SecondMiddleware>();
 
 app.MapDefaultControllerRoute();
 

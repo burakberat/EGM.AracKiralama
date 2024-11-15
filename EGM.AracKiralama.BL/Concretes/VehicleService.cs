@@ -4,7 +4,6 @@ using EGM.AracKiralama.DAL.Abstracts;
 using EGM.AracKiralama.Model.Dtos;
 using EGM.AracKiralama.Model.Entities;
 using Infrastructure.Cache;
-using Infrastructure.Exceptions;
 using Infrastructure.Model.Dtos;
 
 namespace EGM.AracKiralama.BL.Concretes
@@ -22,14 +21,16 @@ namespace EGM.AracKiralama.BL.Concretes
             _cacheService = cacheService;
         }
 
+        //[Cache("VehicleList", 300)]
         public async Task<List<VehicleListDto>> GetActiveVehicles()
         {
-            //Redis
+            //Redis veya InMemory (program.cs de hangisi açıksa)
             var list = await _cacheService.GetObjectAsync<List<VehicleListDto>>("ActiveVehicles");
             if (list != null)
             {
                 return list;
             }
+
             var data = await _aracKiralamaRepository.ListProjectAsync<Vehicle, VehicleListDto>(d => d.StatusId != 0);
             await _cacheService.SetObjectAsync("ActiveVehicles", data);
 

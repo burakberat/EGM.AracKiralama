@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 
 namespace Infrastructure.Extensions
 {
@@ -24,7 +19,6 @@ namespace Infrastructure.Extensions
             {
                 return default(T);
             }
-
             return JsonSerializer.Deserialize<T>(arrBytes);
         }
     }
